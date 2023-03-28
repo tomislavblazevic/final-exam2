@@ -1,0 +1,60 @@
+* body {
+  margin: 0p;
+  padding: 0;
+  box-sizing: border-box;
+  background: rgb(199, 213, 224);
+  font-family: url("https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@1,500&display=swap");
+}
+
+.msg.left {
+  float: left;
+  text-align: left;
+}
+.msg.right {
+  float: right;
+  text-align: right;
+}
+
+.chat-bubble {
+  font-size: 1.4rem;
+  padding: 1rem 1.4rem;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 0.9rem;
+  width: 100%;
+  max-width: 300px;
+}
+
+.message,
+.msg.right,
+.chat-bubble-right {
+  background-color: rgb(119, 168, 197);
+  color: #fff;
+  border-radius: 5px;
+  padding: 10px;
+  margin: 10px 0;
+  float: right;
+  text-align: right;
+  clear: both;
+}
+
+.message,
+.msg.left,
+.chat-bubble-left {
+  background-color: rgb(133, 144, 155);
+  color: rgb(252, 251, 251);
+  border-radius: 5px;
+  padding: 10px;
+  margin: 10px 0;
+  float: left;
+  text-align: left;
+  clear: both;
+}
+.message-form__button {
+  padding: 10px;
+  font-size: 16px;
+  background-color: #85dddd;
+  color: rgb(252, 251, 251);
+  border: none;
+  cursor: pointer;
+}
