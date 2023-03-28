@@ -1,0 +1,33 @@
+
+.message-form__button {
+    padding: 10px;
+    font-size: 16px;
+    background-color: #85dddd;
+    color: rgb(252, 251, 251);
+    border: none;
+    cursor: pointer;
+  }
+  
+  
+.main-div{
+    padding: 15px;
+  }
+  
+.bottom-div{
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    height: 60px;
+    background-color: rgba(3, 0, 0, 0.2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .message-form{
+    display: flex;
+  }
+  
+  
+.message:last-child {
+    margin-bottom: 100px !important;
+}
