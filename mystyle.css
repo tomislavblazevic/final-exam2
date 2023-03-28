@@ -1,0 +1,67 @@
+
+
+body {
+  
+  background-image: url("./48.jpg"); height :100%; width:100%;
+    font-family: url("https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@1,500&display=swap")
+}
+    
+.msg.left {
+    float:left;
+    text-align:left;
+}
+.msg.right {
+    float:right;
+    text-align: right;
+}
+
+
+
+    
+
+      .chat-bubble {
+        font-size: 1.4rem;
+        padding: 1rem 1.4rem;
+        margin-top: 1rem;
+        margin-bottom: 1rem; 
+        border-radius: .9rem;
+        width: 100%;
+        max-width: 300px;
+      }
+       
+      
+      .message,
+      .msg.right,
+      .chat-bubble-right {
+        background-color: #0084ff;
+        color: #fff;
+        border-radius: 5px;
+        padding: 10px;
+        margin: 10px 0;
+        float: right; 
+        text-align: right;
+        clear:both;
+      }
+
+
+      .message,
+      .msg.left,
+      .chat-bubble-left {
+       background-color: #7a0b0b;
+       color: rgb(5, 3, 0);
+       border-radius: 5px;
+       padding: 10px;
+       margin: 10px 0;
+       float: left;
+       text-align:left;
+       clear: both;
+
+      }
+.message-form__button {
+  padding: 10px;
+  font-size: 16px;
+  background-color: #21a125;
+  color: rgb(3, 0, 0);
+  border: none;
+  cursor: pointer;
+}
