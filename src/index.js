@@ -1,9 +1,8 @@
-// PS! Replace this with your own channel ID
-// If you use this channel ID your app will stop working in the future
+
 const CLIENT_ID = 'ZXmRILOrqI9SyoJq';
 
 const drone = new ScaleDrone('ZXmRILOrqI9SyoJq', {
-  data: { // Will be sent out as clientData via events
+  data: {
     name: getRandomName(),
     color: getRandomColor(),
   },
@@ -35,7 +34,7 @@ drone.on('open', error => {
     updateMembersDOM();
   });
 
-  room.on('member_leave', ({id}) => {
+  room.on('member_leave', ({ id }) => {
     const index = members.findIndex(member => member.id === id);
     members.splice(index, 1);
     updateMembersDOM();
@@ -45,7 +44,7 @@ drone.on('open', error => {
     if (member) {
       addMessageToListDOM(text, member);
     } else {
-      // Message is from server
+
     }
   });
 });
@@ -72,8 +71,6 @@ function getRandomColor() {
   return '#' + Math.floor(Math.random() * 0xFFFFFF).toString(16);
 }
 
-//------------- DOM STUFF
-
 const DOM = {
   membersCount: document.querySelector('.members-count'),
   membersList: document.querySelector('.members-list'),
@@ -98,9 +95,6 @@ function sendMessage() {
     message: value,
   });
 }
-
-
-
 
 export function updateMembersDOM() {
   DOM.membersCount.innerText = `${members.length} users in room:`;
@@ -142,12 +136,6 @@ function addMessageToListDOM(text, member) {
     el.scrollTop = el.scrollHeight - el.clientHeight;
   }
 }
-
-
-
-
-
-// index.js
 
 export function sayHello() {
   console.log("Hello, world!");

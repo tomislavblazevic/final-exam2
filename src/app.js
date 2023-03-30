@@ -1,8 +1,4 @@
-import {  updateMembersDOM } from './index';
-
-
-
-// app.js
+import { updateMembersDOM } from './index';
 
 import { sayHello } from './index.js';
 
