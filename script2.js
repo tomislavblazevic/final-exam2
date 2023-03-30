@@ -1,3 +1,6 @@
+
+
+
 function createMemberElement(member) {
   const { name, color } = member.clientData;
   const el = document.createElement('div');
@@ -7,21 +10,15 @@ function createMemberElement(member) {
   return el;
 }
 
-function updateMembersDOM() {
-  DOM.membersCount.innerText = `${members.length} users in room:`;
-  DOM.membersList.innerHTML = '';
-  members.forEach(member =>
-    DOM.membersList.appendChild(createMemberElement(member))
-  );
-}
+
 
 function createMessageElement(text, member) {
   const el = document.createElement('div');
   el.appendChild(createMemberElement(member));
   el.appendChild(document.createTextNode(text));
-  if(drone.clientId === member.id){
+  if (drone.clientId === member.id) {
     el.className = 'message msg right';
-  }else{
+  } else {
     el.className = 'message msg left';
   }
   return el;
