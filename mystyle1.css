@@ -30,7 +30,7 @@
 .chat-bubble-right {
   background-color: rgb(119, 168, 197);
   color: #fff;
-  float: right
+  float: right;
 }
 
 .message,
@@ -53,4 +53,3 @@
   border: none;
   cursor: pointer;
 }
-

@@ -104,7 +104,6 @@ export function updateMembersDOM() {
   );
 }
 
-
 function createMemberElement(member) {
   const { name, color } = member.clientData;
   const el = document.createElement('div');
@@ -113,8 +112,6 @@ function createMemberElement(member) {
   el.style.color = color;
   return el;
 }
-
-
 
 function createMessageElement(text, member) {
   const el = document.createElement('div');
@@ -135,8 +132,4 @@ function addMessageToListDOM(text, member) {
   if (wasTop) {
     el.scrollTop = el.scrollHeight - el.clientHeight;
   }
-}
-
-export function sayHello() {
-  console.log("Hello, world!");
 }
