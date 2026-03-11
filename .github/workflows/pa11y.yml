@@ -1,0 +1,22 @@
+name: Accessibility (Pa11y)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  pa11y:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Start static server
+        run: |
+          python -m http.server 8000 &
+          # give the server a moment to start
+          sleep 2
+
+      - name: Run Pa11y accessibility audit
+        run: npx -y pa11y http://localhost:8000

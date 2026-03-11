@@ -1,0 +1,18 @@
+name: Sync Demo
+
+on:
+  workflow_dispatch:
+
+jobs:
+  demo-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post sample tasks to server
+        run: |
+          curl -Ssf -X POST "$SERVER_URL/tasks" \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: $API_KEY" \
+            -d '[{"id":"demo-1","text":"Demo task from workflow","done":false}]'
+        env:
+          SERVER_URL: ${{ secrets.SERVER_URL }}
+          API_KEY: ${{ secrets.API_KEY }}

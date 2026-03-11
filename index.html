@@ -5,32 +5,98 @@
   <meta charset="UTF-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Play-off</title>
+  <title>To-Do & Notes</title>
 
   <link rel="icon" type="image/x-icon" href="./play-off.ico" />
-  <script type="text/javascript" src="https://cdn.scaledrone.com/scaledrone.min.js"></script>
   <link rel="stylesheet" href="mystyle1.css" />
   <link rel="stylesheet" href="mystyle2.css" />
+  <link rel="stylesheet" href="todo.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
+  <main class="todo-app">
+    <header class="todo-header">
+      <img src="assets/logo.svg" alt="App logo" class="logo" />
+      <h1>To‑Do & Notes</h1>
+      <p class="subtitle">Simple, responsive, and stores data in your browser.</p>
+      <div class="auth" style="margin-top:8px;display:flex;gap:8px;align-items:center">
+        <button id="sign-in" class="btn">Sign in with Google</button>
+        <button id="sign-out" class="btn" style="display:none">Sign out</button>
+        <span id="user-info" style="color:var(--muted)"></span>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+        <input id="search-input" aria-label="Search tasks" placeholder="Search tasks" style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text)" />
+        <select id="sort-by" aria-label="Sort tasks" style="padding:8px;border-radius:8px;background:transparent;color:var(--text);border:1px solid rgba(255,255,255,0.04)">
+          <option value="new">Newest</option>
+          <option value="due">Due date</option>
+          <option value="priority">Priority</option>
+        </select>
+      </div>
+      <button id="shortcut-hint" title="Keyboard shortcuts" aria-haspopup="dialog" aria-expanded="false" style="margin-top:8px;color:var(--muted);font-size:0.9rem;background:transparent;border:0;cursor:pointer;padding:0">
+        Shortcuts: <strong>/</strong> Search · <strong>Ctrl+N</strong> New · <strong>j</strong>/<strong>k</strong> Nav · <strong>Space</strong> Toggle · <strong>e</strong> Edit · <strong>d</strong> Delete · <strong>?</strong> Help
+      </button>
+    </header>
 
-  <div class="main-div">
-    <div class="members-count">-</div>
-    <div class="members-list">-</div>
-    <div class="messages"></div>
+    <section class="todo-card">
+      <form id="todo-form" class="todo-form" onsubmit="return false;">
+        <input id="todo-input" aria-label="New task title" class="todo-input" placeholder="Add a new task or note" autofocus />
+        <input id="todo-due" aria-label="Due date" class="todo-input" type="date" title="Due date" />
+        <select id="todo-priority" aria-label="Priority" class="todo-input" title="Priority">
+          <option value="low">Low</option>
+          <option value="medium" selected>Medium</option>
+          <option value="high">High</option>
+        </select>
+        <input id="todo-notes" aria-label="Optional notes" class="todo-input" placeholder="Optional notes" />
+        <button id="todo-add" class="todo-add">Add</button>
+      </form>
+
+      <ul id="todo-list" class="todo-list" aria-live="polite"></ul>
+
+      <div class="todo-footer">
+        <small>Tasks saved locally in your browser (localStorage).</small>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <button id="sync-push" class="btn">Sync (push)</button>
+          <button id="sync-pull" class="btn">Import (pull)</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Edit modal -->
+  <div id="modal-overlay" class="modal-overlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <header class="modal-header">
+        <h2 id="modal-title">Edit Task</h2>
+        <button id="modal-close" class="btn">✕</button>
+      </header>
+      <div class="modal-body">
+        <label class="modal-row">Title
+          <input id="modal-title-input" class="todo-input" />
+        </label>
+        <label class="modal-row">Due date
+          <input id="modal-due" class="todo-input" type="date" />
+        </label>
+        <label class="modal-row">Priority
+          <select id="modal-priority" class="todo-input">
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </label>
+        <label class="modal-row">Notes
+          <textarea id="modal-notes" class="todo-input" rows="4"></textarea>
+        </label>
+      </div>
+      <footer class="modal-footer">
+        <button id="modal-save" class="todo-add">Save</button>
+        <button id="modal-cancel" class="btn">Cancel</button>
+      </footer>
+    </div>
   </div>
 
-
-  <div class="bottom-div">
-    <form class="message-form" onsubmit="return false;">
-      <input class="message-form__input" placeholder="Type a message.." type="text" />
-      <input class="message-form__button" value="Send" type="submit" />
-      <p>&copy; t.b.2023.</t></p>
-    </form>
-  </div>
-  <script type="module" src="./src/index.js"></script>
-  <script src="./dist/bundle.js"></script>
+  <script type="module" src="./src/firebase.js"></script>
+  <script type="module" src="./src/todo.js"></script>
 </body>
 
 </html>
