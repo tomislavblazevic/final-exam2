@@ -1,4 +1,12 @@
 
+import {
+  initWebRTC,
+  extendRoomWithWebRTC,
+  handleOffer,
+  handleAnswer,
+  handleCandidate
+} from './webrtc.js';
+
 const CLIENT_ID = 'ZXmRILOrqI9SyoJq';
 
 const drone = new ScaleDrone('ZXmRILOrqI9SyoJq', {
@@ -9,6 +17,8 @@ const drone = new ScaleDrone('ZXmRILOrqI9SyoJq', {
 });
 
 let members = [];
+// Make members globally accessible for WebRTC module
+window.members = members;
 
 drone.on('open', error => {
   if (error) {
@@ -17,6 +27,13 @@ drone.on('open', error => {
   console.log('Successfully connected to Scaledrone');
 
   const room = drone.subscribe('observable-room');
+  
+  // Extend room with WebRTC signaling methods
+  extendRoomWithWebRTC(room);
+  
+  // Initialize WebRTC with drone and room
+  initWebRTC(drone, room);
+  
   room.on('open', error => {
     if (error) {
       return console.error(error);
@@ -26,25 +43,52 @@ drone.on('open', error => {
 
   room.on('members', m => {
     members = m;
+    window.members = members;
     updateMembersDOM();
   });
 
   room.on('member_join', member => {
     members.push(member);
+    window.members = members;
     updateMembersDOM();
   });
 
   room.on('member_leave', ({ id }) => {
     const index = members.findIndex(member => member.id === id);
     members.splice(index, 1);
+    window.members = members;
     updateMembersDOM();
   });
 
-  room.on('data', (text, member) => {
+  room.on('data', (data, member) => {
     if (member) {
-      addMessageToListDOM(text, member);
-    } else {
-
+      // Handle WebRTC signaling messages
+      if (typeof data === 'object' && data.type) {
+        console.log('WebRTC message:', data.type, 'from', member.clientData.name);
+        switch (data.type) {
+          case 'webrtc-offer':
+            if (data.to === drone.clientId) {
+              handleOffer(member.id, data.offer, member.clientData);
+            }
+            break;
+          case 'webrtc-answer':
+            if (data.to === drone.clientId) {
+              handleAnswer(member.id, data.answer);
+            }
+            break;
+          case 'webrtc-candidate':
+            if (data.to === drone.clientId) {
+              handleCandidate(member.id, data.candidate);
+            }
+            break;
+          default:
+            // Regular text message
+            addMessageToListDOM(data, member);
+        }
+      } else {
+        // Regular text message
+        addMessageToListDOM(data, member);
+      }
     }
   });
 });
@@ -82,10 +126,13 @@ const DOM = {
   msgRight: document.querySelector('.msg right'),
 };
 
-DOM.form.addEventListener('submit', sendMessage);
+DOM.form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  sendMessage();
+});
 
 function sendMessage() {
-  const value = DOM.input.value;
+  const value = DOM.input.value.trim();
   if (value === '') {
     return;
   }
@@ -97,7 +144,7 @@ function sendMessage() {
 }
 
 export function updateMembersDOM() {
-  DOM.membersCount.innerText = `${members.length} users in room:`;
+  DOM.membersCount.innerText = `${members.length}`;
   DOM.membersList.innerHTML = '';
   members.forEach(member =>
     DOM.membersList.appendChild(createMemberElement(member))
@@ -110,26 +157,43 @@ function createMemberElement(member) {
   el.appendChild(document.createTextNode(name));
   el.className = 'member';
   el.style.color = color;
+  el.style.borderColor = color;
   return el;
 }
 
 function createMessageElement(text, member) {
-  const el = document.createElement('div');
-  el.appendChild(createMemberElement(member));
-  el.appendChild(document.createTextNode(text));
+  const container = document.createElement('div');
+  
+  const nameEl = document.createElement('div');
+  const { name, color } = member.clientData;
+  nameEl.textContent = name;
+  nameEl.style.color = color;
+  nameEl.style.fontSize = '0.8rem';
+  nameEl.style.fontWeight = 'bold';
+  nameEl.style.marginBottom = '2px';
+  
+  const textEl = document.createElement('div');
+  textEl.textContent = text;
+  
+  container.appendChild(nameEl);
+  container.appendChild(textEl);
+  
   if (drone.clientId === member.id) {
-    el.className = 'message msg right';
+    container.className = 'message right';
   } else {
-    el.className = 'message msg left';
+    container.className = 'message left';
   }
-  return el;
+  
+  return container;
 }
 
 function addMessageToListDOM(text, member) {
   const el = DOM.messages;
-  const wasTop = el.scrollTop === el.scrollHeight - el.clientHeight;
+  const wasAtBottom = el.scrollTop >= el.scrollHeight - el.clientHeight - 20;
   el.appendChild(createMessageElement(text, member));
-  if (wasTop) {
-    el.scrollTop = el.scrollHeight - el.clientHeight;
+  if (wasAtBottom) {
+    setTimeout(() => {
+      el.scrollTop = el.scrollHeight;
+    }, 0);
   }
 }

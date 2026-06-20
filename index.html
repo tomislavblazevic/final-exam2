@@ -5,98 +5,489 @@
   <meta charset="UTF-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>To-Do & Notes</title>
+  <title>Play-Off - Audio Video Chat</title>
 
   <link rel="icon" type="image/x-icon" href="./play-off.ico" />
   <link rel="stylesheet" href="mystyle1.css" />
   <link rel="stylesheet" href="mystyle2.css" />
-  <link rel="stylesheet" href="todo.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+      margin: 0;
+      padding: 15px;
+      font-family: 'Inter', sans-serif;
+      color: #fff;
+      min-height: 100vh;
+    }
+    
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    header img {
+      height: 50px;
+      width: auto;
+    }
+    
+    header h1 {
+      margin: 8px 0;
+      font-size: clamp(1.5rem, 5vw, 2.5rem);
+    }
+    
+    header p {
+      color: rgba(255,255,255,0.7);
+      margin: 5px 0;
+      font-size: clamp(0.9rem, 3vw, 1rem);
+    }
+
+    .chat-section {
+      margin-top: 20px;
+      padding: clamp(15px, 5vw, 20px);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 12px;
+      background: rgba(0,0,0,0.4);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+
+    .chat-section h2 {
+      margin-top: 0;
+      color: #fff;
+      font-size: clamp(1.2rem, 4vw, 1.5rem);
+      margin-bottom: 15px;
+    }
+
+    .video-container {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .local-video-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 280px;
+      aspect-ratio: 4/3;
+      background: #000;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 3px solid #4CAF50;
+      box-shadow: 0 4px 15px rgba(76,175,80,0.3);
+    }
+
+    .local-video-wrapper video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .local-video-label {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      background: rgba(0,0,0,0.8);
+      color: #4CAF50;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: bold;
+    }
+
+    #remote-videos {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      flex: 1;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .remote-video-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 240px;
+      aspect-ratio: 4/3;
+      background: #000;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 2px solid rgba(255,255,255,0.3);
+    }
+
+    .remote-video-wrapper video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .remote-video-label {
+      position: absolute;
+      bottom: 6px;
+      left: 6px;
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 3px;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+
+    .media-controls {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .media-controls button {
+      background: #2196F3;
+      color: #fff;
+      padding: 10px 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s;
+      font-size: clamp(0.8rem, 2vw, 0.95rem);
+      white-space: nowrap;
+    }
+
+    .media-controls button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(33,150,243,0.4);
+    }
+
+    .media-controls button:active {
+      transform: translateY(0);
+    }
+
+    #toggle-camera {
+      background: #4CAF50;
+    }
+
+    #call-button {
+      background: #FF9800;
+    }
+
+    #end-call-button {
+      background: #f44336;
+    }
+
+    #call-status {
+      color: #4CAF50;
+      display: flex;
+      align-items: center;
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+
+    .members-section {
+      margin-bottom: 20px;
+      padding: 15px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+    }
+
+    .members-section h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      color: #fff;
+      font-size: 1rem;
+    }
+
+    .members-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .member {
+      padding: 6px 12px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 20px;
+      font-size: 0.9rem;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .messages {
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 12px;
+      height: 200px;
+      overflow-y: auto;
+      margin-bottom: 12px;
+      background: rgba(0,0,0,0.3);
+      font-size: 0.9rem;
+    }
+
+    .message {
+      margin-bottom: 10px;
+      padding: 8px;
+      border-radius: 6px;
+      word-wrap: break-word;
+    }
+
+    .message.left {
+      background: rgba(33,150,243,0.2);
+      border-left: 3px solid #2196F3;
+    }
+
+    .message.right {
+      background: rgba(76,175,80,0.2);
+      border-left: 3px solid #4CAF50;
+      text-align: right;
+    }
+
+    .message-form {
+      display: flex;
+      gap: 8px;
+    }
+
+    .message-form__input {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      font-size: 0.95rem;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .message-form__input::placeholder {
+      color: rgba(255,255,255,0.5);
+    }
+
+    .message-form__button {
+      background: #2196F3;
+      color: #fff;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+    }
+
+    .message-form__button:hover {
+      background: #1976D2;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(33,150,243,0.4);
+    }
+
+    .message-form__button:active {
+      transform: translateY(0);
+    }
+
+    /* Scrollbar styling */
+    .messages::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .messages::-webkit-scrollbar-track {
+      background: rgba(255,255,255,0.1);
+      border-radius: 3px;
+    }
+
+    .messages::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.3);
+      border-radius: 3px;
+    }
+
+    .messages::-webkit-scrollbar-thumb:hover {
+      background: rgba(255,255,255,0.5);
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+
+      header {
+        margin-bottom: 15px;
+      }
+
+      header img {
+        height: 40px;
+      }
+
+      .chat-section {
+        padding: 12px;
+      }
+
+      .video-container {
+        gap: 8px;
+        margin-bottom: 15px;
+      }
+
+      .local-video-wrapper {
+        max-width: 100%;
+        min-width: 150px;
+      }
+
+      .remote-video-wrapper {
+        max-width: 120px;
+        min-width: 100px;
+      }
+
+      .media-controls {
+        gap: 6px;
+      }
+
+      .media-controls button {
+        padding: 8px 10px;
+        font-size: 0.75rem;
+      }
+
+      .messages {
+        height: 150px;
+        font-size: 0.85rem;
+      }
+
+      .message-form__input,
+      .message-form__button {
+        font-size: 0.9rem;
+        padding: 8px 10px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      header h1 {
+        font-size: 1.5rem;
+      }
+
+      header p {
+        font-size: 0.85rem;
+      }
+
+      .chat-section {
+        padding: 10px;
+      }
+
+      .chat-section h2 {
+        font-size: 1.1rem;
+        margin-bottom: 12px;
+      }
+
+      .video-container {
+        gap: 6px;
+        margin-bottom: 12px;
+      }
+
+      .local-video-wrapper {
+        max-width: 100%;
+        min-height: 150px;
+      }
+
+      .remote-video-wrapper {
+        max-width: 100px;
+      }
+
+      .media-controls {
+        gap: 5px;
+      }
+
+      .media-controls button {
+        padding: 7px 8px;
+        font-size: 0.7rem;
+      }
+
+      .members-section {
+        margin-bottom: 15px;
+        padding: 10px;
+      }
+
+      .members-section h3 {
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+      }
+
+      .member {
+        padding: 4px 8px;
+        font-size: 0.75rem;
+      }
+
+      .messages {
+        height: 120px;
+        padding: 8px;
+        font-size: 0.8rem;
+      }
+
+      .message-form {
+        gap: 6px;
+      }
+
+      .message-form__input,
+      .message-form__button {
+        font-size: 0.85rem;
+        padding: 7px 8px;
+      }
+    }
+  </style>
 </head>
 
 <body>
-  <main class="todo-app">
-    <header class="todo-header">
-      <img src="assets/logo.svg" alt="App logo" class="logo" />
-      <h1>To‑Do & Notes</h1>
-      <p class="subtitle">Simple, responsive, and stores data in your browser.</p>
-      <div class="auth" style="margin-top:8px;display:flex;gap:8px;align-items:center">
-        <button id="sign-in" class="btn">Sign in with Google</button>
-        <button id="sign-out" class="btn" style="display:none">Sign out</button>
-        <span id="user-info" style="color:var(--muted)"></span>
-      </div>
-      <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
-        <input id="search-input" aria-label="Search tasks" placeholder="Search tasks" style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text)" />
-        <select id="sort-by" aria-label="Sort tasks" style="padding:8px;border-radius:8px;background:transparent;color:var(--text);border:1px solid rgba(255,255,255,0.04)">
-          <option value="new">Newest</option>
-          <option value="due">Due date</option>
-          <option value="priority">Priority</option>
-        </select>
-      </div>
-      <button id="shortcut-hint" title="Keyboard shortcuts" aria-haspopup="dialog" aria-expanded="false" style="margin-top:8px;color:var(--muted);font-size:0.9rem;background:transparent;border:0;cursor:pointer;padding:0">
-        Shortcuts: <strong>/</strong> Search · <strong>Ctrl+N</strong> New · <strong>j</strong>/<strong>k</strong> Nav · <strong>Space</strong> Toggle · <strong>e</strong> Edit · <strong>d</strong> Delete · <strong>?</strong> Help
-      </button>
+  <main>
+    <header>
+      <img src="assets/logo.svg" alt="App logo" style="height:60px;width:auto;" />
+      <h1>Play-Off</h1>
+      <p>Real-time Audio & Video Chat</p>
     </header>
 
-    <section class="todo-card">
-      <form id="todo-form" class="todo-form" onsubmit="return false;">
-        <input id="todo-input" aria-label="New task title" class="todo-input" placeholder="Add a new task or note" autofocus />
-        <input id="todo-due" aria-label="Due date" class="todo-input" type="date" title="Due date" />
-        <select id="todo-priority" aria-label="Priority" class="todo-input" title="Priority">
-          <option value="low">Low</option>
-          <option value="medium" selected>Medium</option>
-          <option value="high">High</option>
-        </select>
-        <input id="todo-notes" aria-label="Optional notes" class="todo-input" placeholder="Optional notes" />
-        <button id="todo-add" class="todo-add">Add</button>
-      </form>
-
-      <ul id="todo-list" class="todo-list" aria-live="polite"></ul>
-
-      <div class="todo-footer">
-        <small>Tasks saved locally in your browser (localStorage).</small>
-        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
-          <button id="sync-push" class="btn">Sync (push)</button>
-          <button id="sync-pull" class="btn">Import (pull)</button>
-        </div>
+  <!-- Chat Section -->
+  <section class="chat-section" style="margin-top:20px;padding:20px;border:1px solid rgba(255,255,255,0.2);border-radius:12px;background:rgba(0,0,0,0.4);box-shadow:0 8px 32px rgba(0,0,0,0.3)">
+    <h2 style="margin-top:0;color:#fff;font-size:1.5rem;">Live Chat & Video</h2>
+    
+    <!-- Video Container -->
+    <div class="video-container">
+      <div class="local-video-wrapper">
+        <video id="local-video" autoplay muted playsinline></video>
+        <div class="local-video-label">You</div>
       </div>
-    </section>
-  </main>
-
-  <!-- Edit modal -->
-  <div id="modal-overlay" class="modal-overlay" hidden>
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-      <header class="modal-header">
-        <h2 id="modal-title">Edit Task</h2>
-        <button id="modal-close" class="btn">✕</button>
-      </header>
-      <div class="modal-body">
-        <label class="modal-row">Title
-          <input id="modal-title-input" class="todo-input" />
-        </label>
-        <label class="modal-row">Due date
-          <input id="modal-due" class="todo-input" type="date" />
-        </label>
-        <label class="modal-row">Priority
-          <select id="modal-priority" class="todo-input">
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-          </select>
-        </label>
-        <label class="modal-row">Notes
-          <textarea id="modal-notes" class="todo-input" rows="4"></textarea>
-        </label>
-      </div>
-      <footer class="modal-footer">
-        <button id="modal-save" class="todo-add">Save</button>
-        <button id="modal-cancel" class="btn">Cancel</button>
-      </footer>
+      <div id="remote-videos"></div>
     </div>
-  </div>
 
-  <script type="module" src="./src/firebase.js"></script>
-  <script type="module" src="./src/todo.js"></script>
+    <!-- Media Controls -->
+    <div class="media-controls">
+      <button id="toggle-camera">📷 Camera</button>
+      <button id="toggle-microphone">🎤 Unmute</button>
+      <button id="call-button">📞 Start Call</button>
+      <button id="end-call-button" style="display:none;">📞 End</button>
+      <span id="call-status"></span>
+    </div>
+
+    <!-- Members List -->
+    <div class="members-section">
+      <h3>Active Members (<span class="members-count">0</span>)</h3>
+      <div class="members-list"></div>
+    </div>
+
+    <!-- Messages -->
+    <div class="messages"></div>
+
+    <!-- Message Form -->
+    <form class="message-form" onsubmit="return false;">
+      <input class="message-form__input" type="text" placeholder="Type a message..." />
+      <button class="message-form__button" type="submit">Send</button>
+    </form>
+  </section>
+  <script src="https://cdn.scaledrone.com/drone.js"></script>
+  <script type="module" src="./src/index.js"></script>
 </body>
 
 </html>
