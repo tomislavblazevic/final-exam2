@@ -7,6 +7,15 @@ import {
   handleCandidate
 } from './webrtc.js';
 
+// Global error handler for debugging
+window.addEventListener('error', (event) => {
+  console.error('Global error:', event.error);
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('Unhandled promise rejection:', event.reason);
+});
+
 const CLIENT_ID = 'ZXmRILOrqI9SyoJq';
 
 const drone = new ScaleDrone('ZXmRILOrqI9SyoJq', {
@@ -126,17 +135,33 @@ const DOM = {
   msgRight: document.querySelector('.msg right'),
 };
 
-DOM.form.addEventListener('submit', (e) => {
-  e.preventDefault();
-  sendMessage();
-});
+// Add safety check for form
+if (DOM.form) {
+  DOM.form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    sendMessage();
+  });
+} else {
+  console.warn('Message form not found in DOM');
+}
 
 function sendMessage() {
+  if (!DOM.input || !DOM.form) {
+    console.warn('Form elements not available');
+    return;
+  }
+  
   const value = DOM.input.value.trim();
   if (value === '') {
     return;
   }
   DOM.input.value = '';
+  
+  if (typeof drone === 'undefined' || !drone.publish) {
+    console.warn('Drone not connected yet');
+    return;
+  }
+  
   drone.publish({
     room: 'observable-room',
     message: value,
@@ -144,11 +169,20 @@ function sendMessage() {
 }
 
 export function updateMembersDOM() {
+  if (!DOM.membersCount || !DOM.membersList) {
+    console.warn('Members DOM elements not found');
+    return;
+  }
+  
   DOM.membersCount.innerText = `${members.length}`;
   DOM.membersList.innerHTML = '';
-  members.forEach(member =>
-    DOM.membersList.appendChild(createMemberElement(member))
-  );
+  members.forEach(member => {
+    try {
+      DOM.membersList.appendChild(createMemberElement(member));
+    } catch (e) {
+      console.error('Error creating member element:', e);
+    }
+  });
 }
 
 function createMemberElement(member) {
@@ -188,12 +222,21 @@ function createMessageElement(text, member) {
 }
 
 function addMessageToListDOM(text, member) {
-  const el = DOM.messages;
-  const wasAtBottom = el.scrollTop >= el.scrollHeight - el.clientHeight - 20;
-  el.appendChild(createMessageElement(text, member));
-  if (wasAtBottom) {
-    setTimeout(() => {
-      el.scrollTop = el.scrollHeight;
-    }, 0);
+  if (!DOM.messages) {
+    console.warn('Messages DOM element not found');
+    return;
+  }
+  
+  try {
+    const el = DOM.messages;
+    const wasAtBottom = el.scrollTop >= el.scrollHeight - el.clientHeight - 20;
+    el.appendChild(createMessageElement(text, member));
+    if (wasAtBottom) {
+      setTimeout(() => {
+        el.scrollTop = el.scrollHeight;
+      }, 0);
+    }
+  } catch (e) {
+    console.error('Error adding message to DOM:', e);
   }
 }
