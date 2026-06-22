@@ -11,6 +11,10 @@ let configuration = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' },
+    { urls: 'stun:stun.cloudflare.com:3478' },
     {
       urls: "turn:openrelay.metered.ca:80",
       username: "openrelayproject",
@@ -232,8 +236,10 @@ function createPeerConnection(member, createOffer = true) {
   
   peerConnection.onconnectionstatechange = () => {
     console.log('Connection state:', peerConnection.connectionState);
-    if (peerConnection.connectionState === 'failed' || peerConnection.connectionState === 'disconnected') {
-      closeRemoteVideo(member.id);
+    // 'disconnected' is often a temporary state on mobile networks (e.g. 4G jitter).
+    // Only permanently close the video/connection on 'failed' or 'closed'.
+    if (peerConnection.connectionState === 'failed' || peerConnection.connectionState === 'closed') {
+      closePeerConnection(member.id);
     }
   };
   
