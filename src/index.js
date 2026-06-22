@@ -21,7 +21,13 @@ window.addEventListener('unhandledrejection', (event) => {
 
 // Scaledrone Channel ID
 const SCALEDONE_CHANNEL_ID = 'ZXmRILOrqI9SyoJq';
-const roomName = 'observable-privatna-soba';
+
+// Dynamic Room Logic
+if (!location.hash) {
+  location.hash = Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, '0');
+}
+const roomHash = location.hash.substring(1);
+const roomName = 'observable-' + roomHash;
 
 const drone = new ScaleDrone(SCALEDONE_CHANNEL_ID, {
   data: {
@@ -175,6 +181,18 @@ if (DOM.form) {
   });
 } else {
   console.warn('Message form not found in DOM');
+}
+
+// Share Room Link logic
+const shareBtn = document.getElementById('share-room-button');
+if (shareBtn) {
+  shareBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      const originalText = shareBtn.textContent;
+      shareBtn.textContent = '✅ Copied!';
+      setTimeout(() => shareBtn.textContent = originalText, 2000);
+    }).catch(err => console.error('Failed to copy', err));
+  });
 }
 
 // Emoji picker logic
