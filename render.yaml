@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: todo-sync-server
+    env: node
+    region: oregon
+    plan: free
+    rootDir: server
+    buildCommand: npm ci
+    startCommand: node index.js
+    envVars:
+      - key: API_KEY
+        generateValue: true
+      - key: NODE_ENV
+        value: production
