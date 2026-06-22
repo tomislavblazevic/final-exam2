@@ -5,6 +5,8 @@ let localStream = null;
 let peers = new Map(); // Map of memberId -> { connection, remoteStream, localStream }
 let currentRoom = null;
 let currentDrone = null;
+let currentRoomName = '';
+let iceCandidateQueue = new Map(); // Map of memberId -> [candidate]
 let configuration = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
@@ -13,9 +15,48 @@ let configuration = {
   ]
 };
 
-export function initWebRTC(drone, room) {
+export function initWebRTC(drone, room, roomName) {
   currentDrone = drone;
   currentRoom = room;
+  currentRoomName = roomName;
+
+  // Define custom signaling methods on the currentRoom object
+  currentRoom.sendOffer = function(memberId, offer) {
+    currentDrone.publish({
+      room: currentRoomName,
+      message: {
+        type: 'webrtc-offer',
+        to: memberId,
+        offer: offer,
+        from: currentDrone.clientId
+      }
+    });
+  };
+
+  currentRoom.sendAnswer = function(memberId, answer) {
+    currentDrone.publish({
+      room: currentRoomName,
+      message: {
+        type: 'webrtc-answer',
+        to: memberId,
+        answer: answer,
+        from: currentDrone.clientId
+      }
+    });
+  };
+
+  currentRoom.sendCandidates = function(memberId, candidate) {
+    currentDrone.publish({
+      room: currentRoomName,
+      message: {
+        type: 'webrtc-candidate',
+        to: memberId,
+        candidate: candidate,
+        from: currentDrone.clientId
+      }
+    });
+  };
+
   setupEventListeners();
 }
 
@@ -108,7 +149,7 @@ export function endCall() {
   updateCallButtonStates(false);
 }
 
-function createPeerConnection(member) {
+function createPeerConnection(member, createOffer = true) {
   console.log('Creating peer connection for:', member.clientData.name);
   
   const peerConnection = new RTCPeerConnection(configuration);
@@ -155,13 +196,15 @@ function createPeerConnection(member) {
     }
   };
   
-  // Create and send offer
-  peerConnection.createOffer()
-    .then(offer => peerConnection.setLocalDescription(offer))
-    .then(() => {
-      currentRoom.sendOffer(member.id, peerConnection.localDescription);
-    })
-    .catch(error => console.error('Error creating offer:', error));
+  // Create and send offer only if this side should initiate
+  if (createOffer) {
+    peerConnection.createOffer()
+      .then(offer => peerConnection.setLocalDescription(offer))
+      .then(() => {
+        currentRoom.sendOffer(member.id, peerConnection.localDescription);
+      })
+      .catch(error => console.error('Error creating offer:', error));
+  }
   
   peers.set(member.id, {
     connection: peerConnection,
@@ -174,17 +217,22 @@ export function handleOffer(memberId, offer, memberData) {
   let peerConnection = peers.get(memberId)?.connection;
   
   if (!peerConnection) {
-    // If we don't have a connection yet, find the member and create one
+    // Create connection but do NOT create an offer (we are the answerer)
     const member = { id: memberId, clientData: memberData };
-    createPeerConnection(member);
+    createPeerConnection(member, false);
     peerConnection = peers.get(memberId)?.connection;
   }
   
-  peerConnection.setRemoteDescription(new RTCSessionDescription(offer))
-    .then(() => peerConnection.createAnswer())
-    .then(answer => peerConnection.setLocalDescription(answer))
+  const targetMemberId = memberId;
+  const targetConnection = peerConnection;
+
+  targetConnection.setRemoteDescription(new RTCSessionDescription(offer))
+    .then(() => targetConnection.createAnswer())
+    .then(answer => targetConnection.setLocalDescription(answer))
     .then(() => {
-      currentRoom.sendAnswer(memberId, peerConnection.localDescription);
+      currentRoom.sendAnswer(targetMemberId, targetConnection.localDescription);
+      // Flush any ICE candidates that arrived before the remote description was set
+      flushIceCandidateQueue(targetMemberId, targetConnection);
     })
     .catch(error => console.error('Error handling offer:', error));
 }
@@ -193,15 +241,39 @@ export function handleAnswer(memberId, answer) {
   const peerConnection = peers.get(memberId)?.connection;
   if (peerConnection) {
     peerConnection.setRemoteDescription(new RTCSessionDescription(answer))
+      .then(() => {
+        // Flush any ICE candidates that arrived before the remote description was set
+        flushIceCandidateQueue(memberId, peerConnection);
+      })
       .catch(error => console.error('Error handling answer:', error));
   }
 }
 
 export function handleCandidate(memberId, candidate) {
   const peerConnection = peers.get(memberId)?.connection;
-  if (peerConnection) {
+  if (!peerConnection) return;
+
+  if (!peerConnection.remoteDescription) {
+    // Remote description not set yet — queue the candidate
+    if (!iceCandidateQueue.has(memberId)) {
+      iceCandidateQueue.set(memberId, []);
+    }
+    iceCandidateQueue.get(memberId).push(candidate);
+  } else {
     peerConnection.addIceCandidate(new RTCIceCandidate(candidate))
       .catch(error => console.error('Error adding ICE candidate:', error));
+  }
+}
+
+function flushIceCandidateQueue(memberId, peerConnection) {
+  const queued = iceCandidateQueue.get(memberId) || [];
+  if (queued.length > 0) {
+    console.log(`Flushing ${queued.length} queued ICE candidate(s) for`, memberId);
+    queued.forEach(candidate => {
+      peerConnection.addIceCandidate(new RTCIceCandidate(candidate))
+        .catch(error => console.error('Error adding queued ICE candidate:', error));
+    });
+    iceCandidateQueue.delete(memberId);
   }
 }
 
@@ -211,6 +283,7 @@ function closeRemoteVideo(memberId) {
     videoElement.remove();
   }
   peers.delete(memberId);
+  iceCandidateQueue.delete(memberId);
 }
 
 function clearRemoteVideos() {
