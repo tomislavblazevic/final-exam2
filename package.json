@@ -1,0 +1,28 @@
+{
+  "name": "final-exam2",
+  "version": "1.0.0",
+  "description": "open source web chat app called simply `play-off`",
+  "main": "webpack.config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tomislavblazevic/final-exam2.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/tomislavblazevic/final-exam2/issues"
+  },
+  "homepage": "https://github.com/tomislavblazevic/final-exam2#readme",
+  "devDependencies": {
+    "@babel/core": "^8.0.1",
+    "@babel/preset-env": "^8.0.2",
+    "babel-loader": "^10.1.1",
+    "webpack": "^5.107.2",
+    "webpack-cli": "^7.0.3"
+  }
+}

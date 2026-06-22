@@ -54,6 +54,17 @@
       box-sizing: border-box;
     }
 
+    button {
+      overflow: visible;
+      word-wrap: break-word;
+      white-space: normal;
+    }
+    
+    button::-moz-focus-inner {
+      border: 0;
+      padding: 0;
+    }
+
     body {
       background: var(--bg-gradient);
       margin: 0;
@@ -224,7 +235,8 @@
       font-weight: bold;
       transition: all 0.3s;
       font-size: clamp(0.8rem, 2vw, 0.95rem);
-      white-space: nowrap;
+      white-space: normal;
+      word-wrap: break-word;
     }
 
     .media-controls button:hover {
@@ -632,7 +644,7 @@
     });
   </script>
   <script src="https://cdn.scaledrone.com/scaledrone.min.js"></script>
-  <script type="module" src="./src/index.js"></script>
+  <script src="./dist/bundle.js"></script>
   </main>
 </body>
 </html>

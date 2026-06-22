@@ -7,6 +7,17 @@
   cursor: pointer;
 }
 
+button {
+  overflow: visible;
+  word-wrap: break-word;
+  white-space: normal;
+}
+
+button::-moz-focus-inner {
+  border: 0;
+  padding: 0;
+}
+
 .main-div {
   padding: 15px;
   font-size: large;
