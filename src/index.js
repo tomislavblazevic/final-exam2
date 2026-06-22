@@ -48,7 +48,7 @@ drone.on('open', error => {
 
   // Start camera after Scaledrone is ready so both are available together.
   // Media failure is non-fatal — chat and signaling still work.
-  startMedia()
+  const mediaPromise = startMedia()
     .then(stream => {
       // Expose locally so the member_join guard can check it
       window.localStream = stream;
@@ -101,27 +101,34 @@ drone.on('open', error => {
       // Handle WebRTC signaling messages
       if (typeof data === 'object' && data.type) {
         console.log('WebRTC message:', data.type, 'from', member.clientData.name);
-        switch (data.type) {
-          case 'webrtc-offer':
-            if (data.to === drone.clientId) {
-              handleOffer(member.id, data.offer, member.clientData);
-              // Mark as in-call from the answerer side
-              updateCallButtonStates(true);
-            }
-            break;
-          case 'webrtc-answer':
-            if (data.to === drone.clientId) {
-              handleAnswer(member.id, data.answer);
-            }
-            break;
-          case 'webrtc-candidate':
-            if (data.to === drone.clientId) {
-              handleCandidate(member.id, data.candidate);
-            }
-            break;
-          default:
-            // Regular text message
-            addMessageToListDOM(data, member);
+        
+        const processWebRTCMessage = () => {
+          switch (data.type) {
+            case 'webrtc-offer':
+              if (data.to === drone.clientId) {
+                handleOffer(member.id, data.offer, member.clientData);
+                // Mark as in-call from the answerer side
+                updateCallButtonStates(true);
+              }
+              break;
+            case 'webrtc-answer':
+              if (data.to === drone.clientId) {
+                handleAnswer(member.id, data.answer);
+              }
+              break;
+            case 'webrtc-candidate':
+              if (data.to === drone.clientId) {
+                handleCandidate(member.id, data.candidate);
+              }
+              break;
+          }
+        };
+
+        if (data.type.startsWith('webrtc-')) {
+          mediaPromise.then(processWebRTCMessage);
+        } else {
+          // Regular text message
+          addMessageToListDOM(data, member);
         }
       } else {
         // Regular text message
