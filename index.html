@@ -316,6 +316,55 @@
     .message-form {
       display: flex;
       gap: 8px;
+      position: relative;
+    }
+
+    .emoji-btn {
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 6px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 0 10px;
+      transition: background 0.2s;
+      color: var(--text-main);
+    }
+
+    .emoji-btn:hover {
+      background: var(--panel-border);
+    }
+
+    .emoji-picker {
+      position: absolute;
+      bottom: 110%;
+      left: 0;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      width: 250px;
+      box-shadow: 0 4px 15px var(--box-shadow);
+      z-index: 100;
+      transition: opacity 0.2s;
+    }
+
+    .emoji-picker.hidden {
+      display: none;
+    }
+
+    .emoji-picker span {
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 5px;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+
+    .emoji-picker span:hover {
+      background: var(--panel-border);
     }
 
     .message-form__input {
@@ -546,8 +595,14 @@
 
     <!-- Message Form -->
     <form class="message-form" onsubmit="return false;">
-      <input class="message-form__input" type="text" placeholder="Type a message..." />
+      <button type="button" id="emoji-btn" class="emoji-btn" aria-label="Insert Emoji">😀</button>
+      <input class="message-form__input" type="text" placeholder="Type a message or paste an image/GIF link..." />
       <button class="message-form__button" type="submit">Send</button>
+      
+      <!-- Emoji Picker Popover -->
+      <div id="emoji-picker" class="emoji-picker hidden">
+        <span>😀</span><span>😂</span><span>🤣</span><span>😍</span><span>🥺</span><span>👍</span><span>❤️</span><span>🔥</span><span>👏</span><span>🎉</span><span>😢</span><span>😎</span><span>🤔</span><span>🙌</span><span>✨</span><span>💯</span><span>🚀</span><span>💡</span><span>👀</span><span>✅</span>
+      </div>
     </form>
     
     <footer style="text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--panel-border); color: var(--text-muted); font-size: 0.85rem;">

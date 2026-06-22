@@ -133,8 +133,8 @@ export function toggleMicrophone() {
   }
 }
 
-export function startCall(members) {
-  if (!localStream) {
+export function startCall(members, isAuto = false) {
+  if (!localStream && !isAuto) {
     alert('Please enable camera/microphone first');
     return;
   }
@@ -173,6 +173,9 @@ function createPeerConnection(member, createOffer = true) {
     localStream.getTracks().forEach(track => {
       peerConnection.addTrack(track, localStream);
     });
+  } else {
+    peerConnection.addTransceiver('audio', { direction: 'recvonly' });
+    peerConnection.addTransceiver('video', { direction: 'recvonly' });
   }
   
   // Handle remote stream
@@ -322,6 +325,14 @@ function closeRemoteVideo(memberId) {
   }
   peers.delete(memberId);
   iceCandidateQueue.delete(memberId);
+}
+
+export function closePeerConnection(memberId) {
+  const peerData = peers.get(memberId);
+  if (peerData && peerData.connection) {
+    peerData.connection.close();
+  }
+  closeRemoteVideo(memberId);
 }
 
 function clearRemoteVideos() {

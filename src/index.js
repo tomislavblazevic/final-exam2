@@ -6,7 +6,8 @@ import {
   handleCandidate,
   startMedia,
   startCall,
-  updateCallButtonStates
+  updateCallButtonStates,
+  closePeerConnection
 } from './webrtc.js';
 
 // Global error handler for debugging
@@ -73,11 +74,10 @@ drone.on('open', error => {
     window.members = members;
     updateMembersDOM();
 
-    // Only auto-call the newcomer if we already have a local stream.
-    // If localStream is null, startCall() would show an alert and bail — avoid that.
-    if (window.localStream) {
-      startCall([member]);
-    }
+    // Queue auto-call until media initialization (success or failure) completes
+    mediaPromise.finally(() => {
+      startCall([member], true);
+    });
   });
 
   room.on('member_leave', ({ id }) => {
@@ -86,9 +86,8 @@ drone.on('open', error => {
     window.members = members;
     updateMembersDOM();
 
-    // Clean up the remote video for the departed member
-    const videoWrapper = document.getElementById(`remote-video-${id}`);
-    if (videoWrapper) videoWrapper.remove();
+    // Clean up the remote video and peer connection for the departed member
+    closePeerConnection(id);
 
     // If no one is left in call, reset call UI
     if (members.length <= 1) {
@@ -178,6 +177,29 @@ if (DOM.form) {
   console.warn('Message form not found in DOM');
 }
 
+// Emoji picker logic
+const emojiBtn = document.getElementById('emoji-btn');
+const emojiPicker = document.getElementById('emoji-picker');
+
+if (emojiBtn && emojiPicker && DOM.input) {
+  emojiBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    emojiPicker.classList.toggle('hidden');
+  });
+
+  emojiPicker.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (e.target.tagName === 'SPAN') {
+      DOM.input.value += e.target.textContent;
+      DOM.input.focus();
+    }
+  });
+
+  document.addEventListener('click', () => {
+    emojiPicker.classList.add('hidden');
+  });
+}
+
 function sendMessage() {
   if (!DOM.input || !DOM.form) {
     console.warn('Form elements not available');
@@ -240,7 +262,23 @@ function createMessageElement(text, member) {
   nameEl.style.marginBottom = '2px';
   
   const textEl = document.createElement('div');
-  textEl.textContent = text;
+  
+  // Check if text is an image/GIF URL
+  const isImageRegex = /\.(jpeg|jpg|gif|png|webp)(\?.*)?$/i;
+  const isUrlRegex = /^https?:\/\//i;
+  
+  const trimmedText = text.trim();
+  if (isUrlRegex.test(trimmedText) && isImageRegex.test(trimmedText)) {
+    const imgEl = document.createElement('img');
+    imgEl.src = trimmedText;
+    imgEl.style.maxWidth = '100%';
+    imgEl.style.maxHeight = '200px';
+    imgEl.style.borderRadius = '6px';
+    imgEl.style.marginTop = '4px';
+    textEl.appendChild(imgEl);
+  } else {
+    textEl.textContent = text;
+  }
   
   container.appendChild(nameEl);
   container.appendChild(textEl);
