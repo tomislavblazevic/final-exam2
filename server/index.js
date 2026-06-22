@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const fs = require('fs');
 const path = require('path');
 
 const app = express();
@@ -9,42 +8,52 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 const API_KEY = process.env.API_KEY || '';
-const DATA_FILE = path.join(__dirname, 'tasks.json');
 
-function readTasks() {
-  try {
-    const raw = fs.readFileSync(DATA_FILE, 'utf8');
-    return JSON.parse(raw || '[]');
-  } catch (e) {
-    return [];
-  }
-}
-
-function writeTasks(tasks) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(tasks, null, 2), 'utf8');
-}
+// ---------------------------------------------------------------------------
+// In-memory store — on Heroku the filesystem is ephemeral so file-based
+// persistence would silently lose data on every dyno restart.  Clients are
+// expected to POST the full task list on every save, so in-memory is fine
+// for a single-dyno deployment.  Swap for a real DB (Postgres / Redis) if
+// you need true persistence across restarts.
+// ---------------------------------------------------------------------------
+let storedTasks = [];
 
 function requireKey(req, res, next) {
   const key = req.header('x-api-key') || '';
   if (!API_KEY) {
-    return res.status(500).send('Server not configured with API_KEY');
+    return res.status(500).json({ error: 'Server not configured with API_KEY' });
   }
-  if (key !== API_KEY) return res.status(401).send('Invalid API key');
+  if (key !== API_KEY) {
+    return res.status(401).json({ error: 'Invalid API key' });
+  }
   next();
 }
 
+// Health check — Heroku router uses this to verify the dyno is alive
+app.get('/', (req, res) => res.json({ status: 'ok', service: 'todo-sync-server' }));
+
 app.get('/tasks', requireKey, (req, res) => {
-  const tasks = readTasks();
-  res.json(tasks);
+  res.json(storedTasks);
 });
 
 app.post('/tasks', requireKey, (req, res) => {
   const body = req.body;
-  if (!Array.isArray(body)) return res.status(400).send('Expected array of tasks');
-  writeTasks(body);
-  res.json({ status: 'ok', count: body.length });
+  if (!Array.isArray(body)) {
+    return res.status(400).json({ error: 'Expected array of tasks' });
+  }
+  storedTasks = body;
+  res.json({ status: 'ok', count: storedTasks.length });
 });
 
-app.get('/', (req, res) => res.send('Todo sync server'));
+// Catch-all for undefined routes
+app.use((req, res) => {
+  res.status(404).json({ error: 'Not found' });
+});
+
+// Global error handler — prevents unhandled exceptions from crashing the dyno
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ error: 'Internal server error' });
+});
 
 app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
