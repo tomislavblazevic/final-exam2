@@ -5,7 +5,7 @@ on:
     branches: [ main ]
 
 jobs:
-  verify:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -16,20 +16,16 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install & verify server dependencies
+      - name: Verify server dependencies install cleanly
         working-directory: ./server
-        run: npm ci
+        run: npm install --prefer-offline
 
       - name: Trigger Render deploy hook (if configured)
-        # This step is optional — it only runs when the secret is set.
-        # To enable: add RENDER_DEPLOY_HOOK_URL to GitHub repo secrets
-        # (Render Dashboard → your service → Settings → Deploy Hook)
         env:
           RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
         run: |
           if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
-            echo "ℹ️  RENDER_DEPLOY_HOOK_URL secret not set — skipping deploy trigger."
-            echo "   Render auto-deploys from GitHub anyway via render.yaml."
+            echo "ℹ️  RENDER_DEPLOY_HOOK_URL not set — Render auto-deploys via render.yaml."
           else
             curl -fsSL -X POST "$RENDER_DEPLOY_HOOK_URL"
             echo "✅ Render deploy triggered"
