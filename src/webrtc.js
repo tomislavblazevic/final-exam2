@@ -11,7 +11,21 @@ let configuration = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
+    {
+      urls: "turn:openrelay.metered.ca:80",
+      username: "openrelayproject",
+      credential: "openrelayproject"
+    },
+    {
+      urls: "turn:openrelay.metered.ca:443",
+      username: "openrelayproject",
+      credential: "openrelayproject"
+    },
+    {
+      urls: "turn:openrelay.metered.ca:443?transport=tcp",
+      username: "openrelayproject",
+      credential: "openrelayproject"
+    }
   ]
 };
 
@@ -180,7 +194,31 @@ function createPeerConnection(member, createOffer = true) {
   
   peerConnection.ontrack = (event) => {
     console.log('Received remote stream from:', member.clientData.name);
-    video.srcObject = event.streams[0];
+    if (!video.srcObject) {
+      video.srcObject = event.streams[0];
+      
+      // Attempt to play explicitly to handle browser autoplay policies
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.warn('Autoplay prevented by browser:', error);
+          label.textContent = member.clientData.name + ' (Tap to play)';
+          label.style.background = 'rgba(255, 67, 54, 0.9)';
+          
+          const unlockMedia = () => {
+            video.play().then(() => {
+              label.textContent = member.clientData.name;
+              label.style.background = 'rgba(0,0,0,0.7)';
+            }).catch(e => console.error('Play failed after interaction:', e));
+            document.removeEventListener('click', unlockMedia);
+            document.removeEventListener('touchstart', unlockMedia);
+          };
+          
+          document.addEventListener('click', unlockMedia);
+          document.addEventListener('touchstart', unlockMedia);
+        });
+      }
+    }
   };
   
   peerConnection.onicecandidate = (event) => {
