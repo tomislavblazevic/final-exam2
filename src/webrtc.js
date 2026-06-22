@@ -26,14 +26,18 @@ export async function startMedia() {
       video: { width: { ideal: 320 }, height: { ideal: 240 } }
     });
     
+    // Expose globally so index.js member_join guard can check it
+    window.localStream = localStream;
+
     const videoElement = document.getElementById('local-video');
     videoElement.srcObject = localStream;
     
+    // Reflect actual track state on buttons immediately after media starts
     updateMediaButtonStates();
     return localStream;
   } catch (error) {
     console.error('Error accessing media:', error);
-    alert('Permission denied or device not available. Check your camera and microphone settings.');
+    // Don't alert — caller handles the failure gracefully
     return null;
   }
 }
@@ -42,6 +46,7 @@ export async function stopMedia() {
   if (localStream) {
     localStream.getTracks().forEach(track => track.stop());
     localStream = null;
+    window.localStream = null;
     document.getElementById('local-video').srcObject = null;
     updateMediaButtonStates();
   }
@@ -91,12 +96,14 @@ export function startCall(members) {
 
 export function endCall() {
   // Close all peer connections
-  peers.forEach((peerData, memberId) => {
+  peers.forEach((peerData) => {
     if (peerData.connection) {
       peerData.connection.close();
     }
   });
   peers.clear();
+  // Clear stale queued ICE candidates so they don't pollute the next call
+  iceCandidateQueue.clear();
   clearRemoteVideos();
   updateCallButtonStates(false);
 }
@@ -226,7 +233,7 @@ function updateMediaButtonStates() {
   }
 }
 
-function updateCallButtonStates(inCall) {
+export function updateCallButtonStates(inCall) {
   const callBtn = document.getElementById('call-button');
   const endBtn = document.getElementById('end-call-button');
   const status = document.getElementById('call-status');

@@ -1,10 +1,12 @@
 
 import {
   initWebRTC,
-  extendRoomWithWebRTC,
   handleOffer,
   handleAnswer,
-  handleCandidate
+  handleCandidate,
+  startMedia,
+  startCall,
+  updateCallButtonStates
 } from './webrtc.js';
 
 // Global error handler for debugging
@@ -16,9 +18,11 @@ window.addEventListener('unhandledrejection', (event) => {
   console.error('Unhandled promise rejection:', event.reason);
 });
 
-const CLIENT_ID = 'ZXmRILOrqI9SyoJq';
+// Scaledrone Channel ID
+const SCALEDONE_CHANNEL_ID = 'ZXmRILOrqI9SyoJq';
+const roomName = 'observable-privatna-soba';
 
-const drone = new ScaleDrone('ZXmRILOrqI9SyoJq', {
+const drone = new ScaleDrone(SCALEDONE_CHANNEL_ID, {
   data: {
     name: getRandomName(),
     color: getRandomColor(),
@@ -26,23 +30,31 @@ const drone = new ScaleDrone('ZXmRILOrqI9SyoJq', {
 });
 
 let members = [];
-// Make members globally accessible for WebRTC module
 window.members = members;
 
+// Connect to Scaledrone unconditionally so chat + signaling always work,
+// even if the user denies camera/microphone permission.
 drone.on('open', error => {
   if (error) {
-    return console.error(error);
+    return console.error('Problem sa Scaledrone-om:', error);
   }
   console.log('Successfully connected to Scaledrone');
 
-  const room = drone.subscribe('observable-room');
-  
-  // Extend room with WebRTC signaling methods
-  extendRoomWithWebRTC(room);
-  
+  const room = drone.subscribe(roomName);
+
   // Initialize WebRTC with drone and room
-  initWebRTC(drone, room);
-  
+  // (signaling is handled entirely via drone.publish inside webrtc.js)
+  initWebRTC(drone, room, roomName);
+
+  // Start camera after Scaledrone is ready so both are available together.
+  // Media failure is non-fatal — chat and signaling still work.
+  startMedia()
+    .then(stream => {
+      // Expose locally so the member_join guard can check it
+      window.localStream = stream;
+    })
+    .catch(err => console.warn('Media not available:', err));
+
   room.on('open', error => {
     if (error) {
       return console.error(error);
@@ -60,6 +72,12 @@ drone.on('open', error => {
     members.push(member);
     window.members = members;
     updateMembersDOM();
+
+    // Only auto-call the newcomer if we already have a local stream.
+    // If localStream is null, startCall() would show an alert and bail — avoid that.
+    if (window.localStream) {
+      startCall([member]);
+    }
   });
 
   room.on('member_leave', ({ id }) => {
@@ -67,6 +85,15 @@ drone.on('open', error => {
     members.splice(index, 1);
     window.members = members;
     updateMembersDOM();
+
+    // Clean up the remote video for the departed member
+    const videoWrapper = document.getElementById(`remote-video-${id}`);
+    if (videoWrapper) videoWrapper.remove();
+
+    // If no one is left in call, reset call UI
+    if (members.length <= 1) {
+      updateCallButtonStates(false);
+    }
   });
 
   room.on('data', (data, member) => {
@@ -78,6 +105,8 @@ drone.on('open', error => {
           case 'webrtc-offer':
             if (data.to === drone.clientId) {
               handleOffer(member.id, data.offer, member.clientData);
+              // Mark as in-call from the answerer side
+              updateCallButtonStates(true);
             }
             break;
           case 'webrtc-answer':
@@ -121,18 +150,15 @@ function getRandomName() {
 }
 
 function getRandomColor() {
-  return '#' + Math.floor(Math.random() * 0xFFFFFF).toString(16);
+  return '#' + Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, '0');
 }
 
 const DOM = {
   membersCount: document.querySelector('.members-count'),
   membersList: document.querySelector('.members-list'),
   messages: document.querySelector('.messages'),
-  message: document.querySelector('.message'),
   input: document.querySelector('.message-form__input'),
   form: document.querySelector('.message-form'),
-  msgLeft: document.querySelector('.msg left'),
-  msgRight: document.querySelector('.msg right'),
 };
 
 // Add safety check for form
@@ -163,7 +189,7 @@ function sendMessage() {
   }
   
   drone.publish({
-    room: 'observable-room',
+    room: roomName,
     message: value,
   });
 }
