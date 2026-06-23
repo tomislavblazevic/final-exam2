@@ -167,9 +167,23 @@ export function startCall(members, isAuto = false) {
   updateCallButtonStates(true);
 }
 
+export function getActivePeerCount() {
+  return peers.size;
+}
+
 export function endCall() {
-  // Close all peer connections
-  peers.forEach((peerData) => {
+  // Close all peer connections and notify peers
+  peers.forEach((peerData, memberId) => {
+    if (currentDrone) {
+      currentDrone.publish({
+        room: currentRoomName,
+        message: {
+          type: 'webrtc-end',
+          to: memberId,
+          from: currentDrone.clientId
+        }
+      });
+    }
     if (peerData.connection) {
       peerData.connection.close();
     }
@@ -296,6 +310,18 @@ function createPeerConnection(member, createOffer = true) {
 export function handleOffer(memberId, offer, memberData) {
   let peerConnection = peers.get(memberId)?.connection;
   
+  if (peerConnection) {
+    if (peerConnection.signalingState !== 'stable') {
+      if (currentDrone && currentDrone.clientId < memberId) {
+        console.log('Glare detected. Ignoring incoming offer from', memberId);
+        return;
+      }
+    }
+    console.log('Resetting connection for new offer from', memberId);
+    closePeerConnection(memberId);
+    peerConnection = null;
+  }
+
   if (!peerConnection) {
     // Create connection but do NOT create an offer (we are the answerer)
     const member = { id: memberId, clientData: memberData };

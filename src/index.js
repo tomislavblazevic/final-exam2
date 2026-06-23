@@ -9,7 +9,8 @@ import {
   updateCallButtonStates,
   closePeerConnection,
   broadcastFile,
-  setFileTransferCallbacks
+  setFileTransferCallbacks,
+  getActivePeerCount
 } from './webrtc.js';
 
 // Global error handler for debugging
@@ -142,6 +143,14 @@ drone.on('open', error => {
             case 'webrtc-candidate':
               if (data.to === drone.clientId) {
                 handleCandidate(member.id, data.candidate);
+              }
+              break;
+            case 'webrtc-end':
+              if (data.to === drone.clientId) {
+                closePeerConnection(member.id);
+                if (getActivePeerCount() === 0) {
+                  updateCallButtonStates(false);
+                }
               }
               break;
           }
