@@ -247,10 +247,13 @@ if (emojiBtn && emojiPicker && DOM.input) {
 
 // File transfer logic
 const fileBtn = document.getElementById('file-btn');
+const mediaFileBtn = document.getElementById('media-file-btn');
 const fileInput = document.getElementById('file-input');
 
-if (fileBtn && fileInput) {
-  fileBtn.addEventListener('click', () => fileInput.click());
+if (fileInput) {
+  if (fileBtn) fileBtn.addEventListener('click', () => fileInput.click());
+  if (mediaFileBtn) mediaFileBtn.addEventListener('click', () => fileInput.click());
+  
   fileInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) {
