@@ -45,14 +45,24 @@ window.members = members;
 setFileTransferCallbacks({
   onStart: (memberId, fileName) => {
     console.log(`Starting file transfer: ${fileName}`);
+    if (mediaFileBtn && memberId === 'local') {
+      mediaFileBtn.textContent = `⏳ 0%`;
+    }
   },
-  onProgress: (memberId, progress) => {},
+  onProgress: (memberId, progress) => {
+    if (mediaFileBtn && memberId === 'local') {
+      mediaFileBtn.textContent = `⏳ ${Math.round(progress * 100)}%`;
+    }
+  },
   onReceived: (memberId, fileName, fileType, url) => {
     const member = members.find(m => m.id === memberId);
     if (!member) return;
     addFileMessageToListDOM(fileName, fileType, url, member);
   },
   onSent: (fileName, fileType, url) => {
+    if (mediaFileBtn) {
+      mediaFileBtn.textContent = `📁 Share File`;
+    }
     const myMember = { id: drone.clientId, clientData: { name: 'You', color: '#4CAF50' } };
     addFileMessageToListDOM(fileName, fileType, url, myMember, true);
   }

@@ -340,6 +340,7 @@
       padding: 0 10px;
       transition: background 0.2s;
       color: var(--text-main);
+      flex-shrink: 0;
     }
 
     .emoji-btn:hover {
@@ -381,6 +382,7 @@
 
     .message-form__input {
       flex: 1;
+      min-width: 0;
       padding: 10px 12px;
       border-radius: 6px;
       border: 1px solid var(--input-border);
@@ -405,6 +407,8 @@
       transition: all 0.3s;
       font-family: 'Inter', sans-serif;
       font-size: 0.95rem;
+      flex-shrink: 0;
+      white-space: nowrap;
     }
 
     .message-form__button:hover {

@@ -560,11 +560,23 @@ export function broadcastFile(file) {
       return;
     }
 
+    let hasError = false;
     activeChannels.forEach(channel => {
       if (channel.readyState === 'open') {
-        channel.send(chunk);
+        try {
+          channel.send(chunk);
+        } catch (err) {
+          console.error('Error sending chunk:', err);
+          hasError = true;
+        }
       }
     });
+
+    if (hasError) {
+      isSendingFile = false;
+      alert("Error sending file over the network. Please try again or use a smaller file.");
+      return;
+    }
 
     offset += CHUNK_SIZE;
     if (offset < file.size) {
