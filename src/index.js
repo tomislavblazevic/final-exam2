@@ -168,6 +168,8 @@ drone.on('open', error => {
 
         if (data.type.startsWith('webrtc-')) {
           mediaPromise.then(processWebRTCMessage);
+        } else if (data.type === 'clipboard-share') {
+          addClipboardMessageToListDOM(data.data, member);
         } else {
           // Regular text message
           addMessageToListDOM(data, member);
@@ -218,6 +220,37 @@ if (DOM.form) {
   });
 } else {
   console.warn('Message form not found in DOM');
+}
+
+// Share Clipboard logic
+const shareClipboardBtn = document.getElementById('share-clipboard-button');
+if (shareClipboardBtn) {
+  shareClipboardBtn.addEventListener('click', async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (!text || text.trim() === '') {
+        alert('Clipboard is empty!');
+        return;
+      }
+      
+      if (typeof drone === 'undefined' || !drone.publish) {
+        alert('Chat not connected yet');
+        return;
+      }
+      
+      drone.publish({
+        room: roomName,
+        message: { type: 'clipboard-share', data: text },
+      });
+      
+      const originalText = shareClipboardBtn.textContent;
+      shareClipboardBtn.textContent = '✅ Shared!';
+      setTimeout(() => shareClipboardBtn.textContent = originalText, 2000);
+    } catch (err) {
+      console.error('Failed to read clipboard', err);
+      alert('Could not read clipboard. Please ensure you have granted permission.');
+    }
+  });
 }
 
 // Share Room Link logic
@@ -468,6 +501,109 @@ function addFileMessageToListDOM(fileName, fileType, url, member, isLocal = fals
     }
   } catch (e) {
     console.error('Error adding file message:', e);
+  }
+}
+
+function addClipboardMessageToListDOM(clipboardText, member) {
+  if (!DOM.messages) return;
+  
+  try {
+    const el = DOM.messages;
+    const wasAtBottom = el.scrollTop >= el.scrollHeight - el.clientHeight - 20;
+    
+    const container = document.createElement('div');
+    
+    const nameEl = document.createElement('div');
+    const { name, color } = member.clientData || { name: 'Unknown', color: '#fff' };
+    nameEl.textContent = name;
+    nameEl.style.color = color;
+    nameEl.style.fontSize = '0.8rem';
+    nameEl.style.fontWeight = 'bold';
+    nameEl.style.marginBottom = '2px';
+    
+    const contentEl = document.createElement('div');
+    contentEl.style.marginTop = '5px';
+    
+    const box = document.createElement('div');
+    box.style.background = 'var(--input-bg)';
+    box.style.border = '1px dashed var(--input-border)';
+    box.style.padding = '10px';
+    box.style.borderRadius = '6px';
+    box.style.wordBreak = 'break-word';
+    
+    const header = document.createElement('div');
+    header.textContent = '📋 Shared Clipboard';
+    header.style.fontWeight = 'bold';
+    header.style.marginBottom = '5px';
+    header.style.color = '#E91E63';
+    
+    const textEl = document.createElement('div');
+    textEl.textContent = clipboardText;
+    textEl.style.fontFamily = 'monospace';
+    textEl.style.marginBottom = '8px';
+    textEl.style.maxHeight = '100px';
+    textEl.style.overflowY = 'auto';
+    textEl.style.whiteSpace = 'pre-wrap';
+    
+    const actionsEl = document.createElement('div');
+    actionsEl.style.display = 'flex';
+    actionsEl.style.gap = '8px';
+    
+    const copyBtn = document.createElement('button');
+    copyBtn.textContent = 'Copy';
+    copyBtn.style.padding = '4px 8px';
+    copyBtn.style.fontSize = '0.8rem';
+    copyBtn.style.cursor = 'pointer';
+    copyBtn.style.borderRadius = '4px';
+    copyBtn.style.border = 'none';
+    copyBtn.style.background = '#2196F3';
+    copyBtn.style.color = '#fff';
+    copyBtn.onclick = () => {
+      navigator.clipboard.writeText(clipboardText).then(() => {
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => copyBtn.textContent = 'Copy', 2000);
+      });
+    };
+    actionsEl.appendChild(copyBtn);
+    
+    const isUrlRegex = /^https?:\/\//i;
+    if (isUrlRegex.test(clipboardText.trim())) {
+      const openBtn = document.createElement('button');
+      openBtn.textContent = 'Open Link';
+      openBtn.style.padding = '4px 8px';
+      openBtn.style.fontSize = '0.8rem';
+      openBtn.style.cursor = 'pointer';
+      openBtn.style.borderRadius = '4px';
+      openBtn.style.border = 'none';
+      openBtn.style.background = '#4CAF50';
+      openBtn.style.color = '#fff';
+      openBtn.onclick = () => {
+        window.open(clipboardText.trim(), '_blank');
+      };
+      actionsEl.appendChild(openBtn);
+    }
+    
+    box.appendChild(header);
+    box.appendChild(textEl);
+    box.appendChild(actionsEl);
+    contentEl.appendChild(box);
+    
+    container.appendChild(nameEl);
+    container.appendChild(contentEl);
+    
+    if (typeof drone !== 'undefined' && drone.clientId === member.id) {
+      container.className = 'message right';
+    } else {
+      container.className = 'message left';
+    }
+    
+    el.appendChild(container);
+    
+    if (wasAtBottom) {
+      setTimeout(() => el.scrollTop = el.scrollHeight, 0);
+    }
+  } catch (e) {
+    console.error('Error adding clipboard message:', e);
   }
 }
 
