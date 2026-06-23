@@ -7,7 +7,9 @@ import {
   startMedia,
   startCall,
   updateCallButtonStates,
-  closePeerConnection
+  closePeerConnection,
+  broadcastFile,
+  setFileTransferCallbacks
 } from './webrtc.js';
 
 // Global error handler for debugging
@@ -38,6 +40,22 @@ const drone = new ScaleDrone(SCALEDONE_CHANNEL_ID, {
 
 let members = [];
 window.members = members;
+
+setFileTransferCallbacks({
+  onStart: (memberId, fileName) => {
+    console.log(`Starting file transfer: ${fileName}`);
+  },
+  onProgress: (memberId, progress) => {},
+  onReceived: (memberId, fileName, fileType, url) => {
+    const member = members.find(m => m.id === memberId);
+    if (!member) return;
+    addFileMessageToListDOM(fileName, fileType, url, member);
+  },
+  onSent: (fileName, fileType, url) => {
+    const myMember = { id: drone.clientId, clientData: { name: 'You', color: '#4CAF50' } };
+    addFileMessageToListDOM(fileName, fileType, url, myMember, true);
+  }
+});
 
 // Connect to Scaledrone unconditionally so chat + signaling always work,
 // even if the user denies camera/microphone permission.
@@ -218,6 +236,21 @@ if (emojiBtn && emojiPicker && DOM.input) {
   });
 }
 
+// File transfer logic
+const fileBtn = document.getElementById('file-btn');
+const fileInput = document.getElementById('file-input');
+
+if (fileBtn && fileInput) {
+  fileBtn.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      broadcastFile(file);
+      fileInput.value = '';
+    }
+  });
+}
+
 function sendMessage() {
   if (!DOM.input || !DOM.form) {
     console.warn('Form elements not available');
@@ -329,3 +362,90 @@ function addMessageToListDOM(text, member) {
     console.error('Error adding message to DOM:', e);
   }
 }
+
+function createFileMessageElement(fileName, fileType, url, member, isLocal = false) {
+  const container = document.createElement('div');
+  
+  const nameEl = document.createElement('div');
+  const { name, color } = member.clientData || { name: 'You', color: '#4CAF50' };
+  nameEl.textContent = name;
+  nameEl.style.color = color;
+  nameEl.style.fontSize = '0.8rem';
+  nameEl.style.fontWeight = 'bold';
+  nameEl.style.marginBottom = '2px';
+  
+  const contentEl = document.createElement('div');
+  contentEl.style.marginTop = '5px';
+  
+  if (fileType.startsWith('image/')) {
+    const imgEl = document.createElement('img');
+    imgEl.src = url;
+    imgEl.alt = fileName;
+    imgEl.style.maxWidth = '100%';
+    imgEl.style.maxHeight = '200px';
+    imgEl.style.borderRadius = '6px';
+    imgEl.style.display = 'block';
+    
+    const linkEl = document.createElement('a');
+    linkEl.href = url;
+    linkEl.download = fileName;
+    linkEl.textContent = isLocal ? `✅ Sent ${fileName}` : `⬇️ Download ${fileName}`;
+    linkEl.style.color = isLocal ? '#4CAF50' : '#2196F3';
+    linkEl.style.textDecoration = isLocal ? 'none' : 'underline';
+    linkEl.style.fontSize = '0.8rem';
+    linkEl.style.display = 'block';
+    linkEl.style.marginTop = '4px';
+    
+    contentEl.appendChild(imgEl);
+    contentEl.appendChild(linkEl);
+  } else {
+    const box = document.createElement('div');
+    box.style.background = 'var(--input-bg)';
+    box.style.padding = '10px';
+    box.style.borderRadius = '6px';
+    box.style.display = 'inline-block';
+    
+    const iconLabel = document.createElement('div');
+    iconLabel.textContent = `📄 ${fileName}`;
+    iconLabel.style.fontWeight = 'bold';
+    iconLabel.style.marginBottom = '5px';
+    
+    const linkEl = document.createElement('a');
+    linkEl.href = url;
+    linkEl.download = fileName;
+    linkEl.textContent = isLocal ? '✅ Sent' : '⬇️ Download';
+    linkEl.style.color = isLocal ? '#4CAF50' : '#2196F3';
+    linkEl.style.textDecoration = isLocal ? 'none' : 'underline';
+    linkEl.style.fontSize = '0.8rem';
+    
+    box.appendChild(iconLabel);
+    box.appendChild(linkEl);
+    contentEl.appendChild(box);
+  }
+  
+  container.appendChild(nameEl);
+  container.appendChild(contentEl);
+  
+  if (isLocal || (typeof drone !== 'undefined' && drone.clientId === member.id)) {
+    container.className = 'message right';
+  } else {
+    container.className = 'message left';
+  }
+  
+  return container;
+}
+
+function addFileMessageToListDOM(fileName, fileType, url, member, isLocal = false) {
+  if (!DOM.messages) return;
+  try {
+    const el = DOM.messages;
+    const wasAtBottom = el.scrollTop >= el.scrollHeight - el.clientHeight - 20;
+    el.appendChild(createFileMessageElement(fileName, fileType, url, member, isLocal));
+    if (wasAtBottom) {
+      setTimeout(() => el.scrollTop = el.scrollHeight, 0);
+    }
+  } catch (e) {
+    console.error('Error adding file message:', e);
+  }
+}
+

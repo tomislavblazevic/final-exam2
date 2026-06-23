@@ -7,6 +7,20 @@ let currentRoom = null;
 let currentDrone = null;
 let currentRoomName = '';
 let iceCandidateQueue = new Map(); // Map of memberId -> [candidate]
+
+// File transfer state
+let fileTransferCallbacks = {
+  onStart: null,
+  onProgress: null,
+  onReceived: null,
+  onSent: null
+};
+export function setFileTransferCallbacks(callbacks) {
+  fileTransferCallbacks = { ...fileTransferCallbacks, ...callbacks };
+}
+const fileReceiveState = new Map(); // memberId -> { fileName, fileType, fileSize, chunks: [], receivedSize: 0 }
+let isSendingFile = false;
+
 let configuration = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
@@ -182,6 +196,24 @@ function createPeerConnection(member, createOffer = true) {
     peerConnection.addTransceiver('video', { direction: 'recvonly' });
   }
   
+  // Create data channel for file transfer
+  let dataChannel;
+  if (createOffer) {
+    dataChannel = peerConnection.createDataChannel('fileTransfer');
+    dataChannel.binaryType = 'arraybuffer';
+    setupDataChannel(dataChannel, member.id);
+  }
+
+  peerConnection.ondatachannel = (event) => {
+    const channel = event.channel;
+    channel.binaryType = 'arraybuffer';
+    const peerData = peers.get(member.id);
+    if (peerData) {
+      peerData.dataChannel = channel;
+    }
+    setupDataChannel(channel, member.id);
+  };
+  
   // Handle remote stream
   const remoteVideoElement = document.createElement('div');
   remoteVideoElement.id = `remote-video-${member.id}`;
@@ -256,7 +288,8 @@ function createPeerConnection(member, createOffer = true) {
   peers.set(member.id, {
     connection: peerConnection,
     remoteStream: null,
-    localStream: localStream
+    localStream: localStream,
+    dataChannel: dataChannel
   });
 }
 
@@ -391,6 +424,134 @@ function setupEventListeners() {
     startCall(members);
   });
   endCallBtn?.addEventListener('click', endCall);
+}
+
+function setupDataChannel(channel, memberId) {
+  channel.onopen = () => console.log('Data channel open for', memberId);
+  channel.onclose = () => console.log('Data channel closed for', memberId);
+
+  channel.onmessage = (event) => {
+    if (typeof event.data === 'string') {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'file-start') {
+          fileReceiveState.set(memberId, {
+            fileName: data.fileName,
+            fileType: data.fileType,
+            fileSize: data.fileSize,
+            chunks: [],
+            receivedSize: 0
+          });
+          if (fileTransferCallbacks.onStart) {
+            fileTransferCallbacks.onStart(memberId, data.fileName);
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing data channel message', e);
+      }
+    } else if (event.data instanceof ArrayBuffer) {
+      const state = fileReceiveState.get(memberId);
+      if (state) {
+        state.chunks.push(event.data);
+        state.receivedSize += event.data.byteLength;
+        
+        if (fileTransferCallbacks.onProgress) {
+          fileTransferCallbacks.onProgress(memberId, state.receivedSize / state.fileSize);
+        }
+
+        if (state.receivedSize >= state.fileSize) {
+          const blob = new Blob(state.chunks, { type: state.fileType });
+          const url = URL.createObjectURL(blob);
+          if (fileTransferCallbacks.onReceived) {
+            fileTransferCallbacks.onReceived(memberId, state.fileName, state.fileType, url);
+          }
+          fileReceiveState.delete(memberId);
+        }
+      }
+    }
+  };
+}
+
+export function broadcastFile(file) {
+  if (isSendingFile) {
+    alert("Already sending a file, please wait.");
+    return;
+  }
+  
+  const activeChannels = [];
+  peers.forEach(peer => {
+    if (peer.dataChannel && peer.dataChannel.readyState === 'open') {
+      activeChannels.push(peer.dataChannel);
+    }
+  });
+
+  if (activeChannels.length === 0) {
+    // Nobody to send to, just show local success
+    if (fileTransferCallbacks.onSent) {
+      fileTransferCallbacks.onSent(file.name, file.type, URL.createObjectURL(file));
+    }
+    return;
+  }
+
+  isSendingFile = true;
+  if (fileTransferCallbacks.onStart) {
+    fileTransferCallbacks.onStart('local', file.name);
+  }
+
+  const metadata = JSON.stringify({
+    type: 'file-start',
+    fileName: file.name,
+    fileType: file.type,
+    fileSize: file.size
+  });
+  
+  activeChannels.forEach(channel => channel.send(metadata));
+
+  const CHUNK_SIZE = 16384;
+  let offset = 0;
+  const reader = new FileReader();
+
+  function readNextChunk() {
+    const slice = file.slice(offset, offset + CHUNK_SIZE);
+    reader.readAsArrayBuffer(slice);
+  }
+
+  reader.onload = (e) => {
+    const chunk = e.target.result;
+    let bufferFull = false;
+
+    activeChannels.forEach(channel => {
+      if (channel.readyState === 'open') {
+        if (channel.bufferedAmount > 1024 * 1024 * 5) { // 5MB limit
+          bufferFull = true;
+        }
+      }
+    });
+
+    if (bufferFull) {
+      // wait a bit for buffer to drain
+      setTimeout(() => reader.onload(e), 50);
+      return;
+    }
+
+    activeChannels.forEach(channel => {
+      if (channel.readyState === 'open') {
+        channel.send(chunk);
+      }
+    });
+
+    offset += CHUNK_SIZE;
+    if (offset < file.size) {
+      readNextChunk();
+    } else {
+      isSendingFile = false;
+      if (fileTransferCallbacks.onSent) {
+        fileTransferCallbacks.onSent(file.name, file.type, URL.createObjectURL(file));
+      }
+    }
+  };
+
+  readNextChunk();
 }
 
 // Extension to ScaleDrone room for WebRTC signaling

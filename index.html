@@ -608,6 +608,8 @@
 
     <!-- Message Form -->
     <form class="message-form" onsubmit="return false;">
+      <button type="button" id="file-btn" class="emoji-btn" aria-label="Send File" title="Send a file or picture">📎</button>
+      <input type="file" id="file-input" style="display:none;" />
       <button type="button" id="emoji-btn" class="emoji-btn" aria-label="Insert Emoji">😀</button>
       <input class="message-form__input" type="text" placeholder="Type a message or paste an image/GIF link..." />
       <button class="message-form__button" type="submit">Send</button>
