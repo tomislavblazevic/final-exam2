@@ -98,7 +98,21 @@ export async function startMedia() {
       audio: true,
       video: { width: { ideal: 320 }, height: { ideal: 240 } }
     });
-    
+  } catch (error) {
+    console.warn('Initial getUserMedia failed, trying fallback constraints for Safari:', error);
+    try {
+      // Fallback for Safari which sometimes rejects ideal constraints
+      localStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: true
+      });
+    } catch (fallbackError) {
+      console.error('Error accessing media:', fallbackError);
+      return null;
+    }
+  }
+
+  try {
     // Expose globally so index.js member_join guard can check it
     window.localStream = localStream;
 
@@ -109,8 +123,7 @@ export async function startMedia() {
     updateMediaButtonStates();
     return localStream;
   } catch (error) {
-    console.error('Error accessing media:', error);
-    // Don't alert — caller handles the failure gracefully
+    console.error('Error setting up media stream:', error);
     return null;
   }
 }
@@ -333,12 +346,14 @@ export function handleOffer(memberId, offer, memberData) {
   const targetConnection = peerConnection;
 
   targetConnection.setRemoteDescription(new RTCSessionDescription(offer))
-    .then(() => targetConnection.createAnswer())
+    .then(() => {
+      // Flush any ICE candidates that arrived before the remote description was set
+      flushIceCandidateQueue(targetMemberId, targetConnection);
+      return targetConnection.createAnswer();
+    })
     .then(answer => targetConnection.setLocalDescription(answer))
     .then(() => {
       currentRoom.sendAnswer(targetMemberId, targetConnection.localDescription);
-      // Flush any ICE candidates that arrived before the remote description was set
-      flushIceCandidateQueue(targetMemberId, targetConnection);
     })
     .catch(error => console.error('Error handling offer:', error));
 }
