@@ -6,11 +6,10 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Play-Off Audio-Video Chat</title>
-  
+  <link rel="stylesheet" href="./video.css">
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#1e3c72" />
   <link rel="apple-touch-icon" href="./assets/icon-192.png" />
-
   <link rel="icon" type="image/x-icon" href="./play-off.ico" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
@@ -145,25 +144,34 @@
       margin-bottom: 15px;
     }
 
-    .video-container {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
+  .video-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+
+    gap: 20px;
+    margin-bottom: 20px;
+
+    width: 100%;
+}
 
     .local-video-wrapper {
-      position: relative;
-      width: 100%;
-      max-width: 180px;
-      aspect-ratio: 4/3;
-      background: var(--video-bg);
-      border-radius: 8px;
-      overflow: hidden;
-      border: 3px solid #4CAF50;
-      box-shadow: 0 4px 15px rgba(76,175,80,0.3);
-    }
+    position: relative;
+
+    flex: 1 1 420px;
+
+    min-width: 320px;
+    max-width: 700px;
+
+    aspect-ratio: 16 / 9;
+
+    background: var(--video-bg);
+    border-radius: 12px;
+    overflow: hidden;
+
+    border: 3px solid #4CAF50;
+}
 
     .local-video-wrapper video {
       width: 100%;
@@ -192,16 +200,22 @@
       align-items: flex-start;
     }
 
-    .remote-video-wrapper {
-      position: relative;
-      width: 100%;
-      max-width: 640px;
-      aspect-ratio: 4/3;
-      background: var(--video-bg);
-      border-radius: 8px;
-      overflow: hidden;
-      border: 2px solid var(--panel-border);
-    }
+   .remote-video-wrapper {
+    position: relative;
+
+    flex: 1 1 420px;
+
+    min-width: 320px;
+    max-width: 700px;
+
+    aspect-ratio: 16 / 9;
+
+    background: var(--video-bg);
+    border-radius: 12px;
+    overflow: hidden;
+
+    border: 2px solid var(--panel-border);
+}
 
     .remote-video-wrapper video {
       width: 100%;
