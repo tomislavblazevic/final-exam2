@@ -154,11 +154,12 @@
     aspect-ratio: 16 / 9;
 
     background: var(--video-bg);
-    border-radius: 12px;
+    border: 3px solid #4CAF50;
+    border-radius: 14px;
     overflow: hidden;
 
-    border: 3px solid #4CAF50;
-    box-shadow: 0 8px 20px rgba(76,175,80,.25);
+    box-shadow: 0 10px 24px rgba(76,175,80,.25);
+
 }
 
     .local-video-wrapper video {
@@ -192,18 +193,18 @@
     position: relative;
 
     flex: 1 1 420px;
-
     min-width: 320px;
     max-width: 700px;
 
     aspect-ratio: 16 / 9;
 
     background: var(--video-bg);
-    border-radius: 12px;
+    border: 2px solid var(--panel-border);
+    border-radius: 14px;
+
     overflow: hidden;
 
-    border: 2px solid var(--panel-border);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.25);
 }
 
     .remote-video-wrapper video {
