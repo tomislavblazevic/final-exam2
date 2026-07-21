@@ -587,8 +587,7 @@
       }
     }
 
-    /* Force local video style */
-.local-video-wrapper {
+      .local-video-wrapper {
     border: none !important;
     max-width: 700px !important;
     min-width: 320px !important;
@@ -603,5 +602,15 @@
       .local-video-wrapper video {
     outline: none !important;
     border: none !important;
+}
 
+#local-video {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+#local-video:focus,
+#local-video:focus-visible {
+    outline: none !important;
 }
