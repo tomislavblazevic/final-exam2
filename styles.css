@@ -586,3 +586,15 @@
         padding: 7px 8px;
       }
     }
+
+      .local-video-wrapper {
+    border: none !important;
+    outline: none !important;
+    box-shadow: 0 10px 24px rgba(0,0,0,.25) !important;
+}
+
+      .local-video-wrapper video {
+    outline: none !important;
+    border: none !important;
+
+}
