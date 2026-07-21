@@ -586,3 +586,11 @@
         padding: 7px 8px;
       }
     }
+
+    /* Force local video style */
+.local-video-wrapper {
+    border: none !important;
+    max-width: 700px !important;
+    min-width: 320px !important;
+    aspect-ratio: 16 / 9 !important;
+}
