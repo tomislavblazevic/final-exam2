@@ -242,9 +242,9 @@ function createPeerConnection(member, createOffer = true) {
   };
   
   // Handle remote stream
-  const remoteVideoElement = document.createElement('div');
+  Element = document.createElement('div');
   remoteVideoElement.id = `remote-video-${member.id}`;
-  remoteVideoElement.className = 'remote-video-wrapper';
+  remoteVideoElement.className = 'remote-video-wrappeconst remoteVideor';
   
   const video = document.createElement('video');
   video.autoplay = true;
