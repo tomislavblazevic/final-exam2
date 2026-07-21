@@ -598,3 +598,14 @@
     border: none !important;
 
 }
+
+#local-video {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+#local-video:focus,
+#local-video:focus-visible {
+    outline: none !important;
+}
