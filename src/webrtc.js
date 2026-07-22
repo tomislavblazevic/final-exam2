@@ -91,6 +91,20 @@ export function initWebRTC(drone, room, roomName) {
 
   setupEventListeners();
 }
+function enableFullscreen(videoElement) {
+  videoElement.addEventListener('dblclick', async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await videoElement.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch (err) {
+      console.error('Fullscreen error:', err);
+    }
+  });
+}
+
 
 export async function startMedia() {
   try {
@@ -118,6 +132,7 @@ export async function startMedia() {
 
     const videoElement = document.getElementById('local-video');
     videoElement.srcObject = localStream;
+    enableFullscreen(videoElement);
     
     // Reflect actual track state on buttons immediately after media starts
     updateMediaButtonStates();
@@ -244,11 +259,13 @@ function createPeerConnection(member, createOffer = true) {
   // Handle remote stream
   Element = document.createElement('div');
   remoteVideoElement.id = `remote-video-${member.id}`;
-  remoteVideoElement.className = 'remote-video-wrappeconst remoteVideor';
+  remoteVideoElement.className = 'remote-video-wrapper';
   
   const video = document.createElement('video');
   video.autoplay = true;
   video.playsinline = true;
+  
+  enableFullscreen(video);
   
   const label = document.createElement('div');
   label.className = 'remote-video-label';
@@ -256,6 +273,20 @@ function createPeerConnection(member, createOffer = true) {
   
   remoteVideoElement.appendChild(video);
   remoteVideoElement.appendChild(label);
+  function enableFullscreen(element) {
+  element.addEventListener('click', async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await element.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch (err) {
+      console.error('Fullscreen error:', err);
+    }
+  });
+}
+
   document.getElementById('remote-videos').appendChild(remoteVideoElement);
   
   peerConnection.ontrack = (event) => {
